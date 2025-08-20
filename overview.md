@@ -45,11 +45,21 @@ Challenger is a social media application built on React that creates an engaging
 
 ## Technical Architecture
 - **Frontend**: React-based single-page application
+- **Backend Database**: PostgreSQL for robust data management and relational queries
 - **State Management**: Component-based state handling
 - **Payment Integration**: Secure payment processing for challenge purchases
 - **Digital Rights Management**: Content protection for premium challenges
 - **Responsive Design**: Mobile-first approach for optimal social media consumption
 - **Video Processing**: Integration capabilities for video upload, processing, and mosaic creation
+
+## Database Schema (PostgreSQL)
+- **Users Table**: User profiles, authentication, and account information
+- **Challenges Table**: Challenge metadata, pricing, and creator information
+- **Challenge_Participants Table**: Junction table tracking user participation in challenges
+- **User_Tags Table**: Managing user tagging relationships and invitations
+- **Payments Table**: Transaction history and revenue tracking
+- **Challenge_Views Table**: Pay-per-view purchase records and access permissions
+- **Revenue_Distribution Table**: Tracking pyramid-style revenue sharing across participants
 
 ## User Experience
 - **Intuitive Interface**: Clean, modern design optimized for mobile and desktop

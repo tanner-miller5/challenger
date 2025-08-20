@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: challenger-postgres
+    environment:
+      POSTGRES_DB: challenger_db
+      POSTGRES_USER: challenger_user
+      POSTGRES_PASSWORD: challenger_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    networks:
+      - challenger-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U challenger_user -d challenger_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: challenger-backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://challenger_user:challenger_password@postgres:5432/challenger_db
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      PORT: 5000
+      UPLOAD_DIR: /app/uploads/
+      MAX_FILE_SIZE: 52428800
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - challenger-network
+    command: npm run dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Frontend React App
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: development
+    container_name: challenger-frontend
+    environment:
+      NODE_ENV: development
+      REACT_APP_API_URL: http://localhost:5000/api
+      REACT_APP_UPLOAD_URL: http://localhost:5000
+      CHOKIDAR_USEPOLLING: true
+      WATCHPACK_POLLING: true
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - challenger-network
+    command: npm start
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
+  uploads_data:
+
+networks:
+  challenger-network:
+    driver: bridge
