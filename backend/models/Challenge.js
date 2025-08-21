@@ -144,24 +144,23 @@ class Challenge extends Model {
       as: 'views'
     });
 
-    // Challenge has many revenue distributions
-    this.hasMany(models.RevenueDistribution, {
-      foreignKey: 'challengeId',
-      as: 'revenueDistributions'
-    });
+    // Remove associations with models that don't exist yet
+    // Uncomment these when you create the corresponding models:
+    // this.hasMany(models.RevenueDistribution, {
+    //   foreignKey: 'challengeId',
+    //   as: 'revenueDistributions'
+    // });
 
-    // Challenge has many likes
-    this.belongsToMany(models.User, {
-      through: models.ChallengeLike,
-      foreignKey: 'challengeId',
-      as: 'likedByUsers'
-    });
+    // this.belongsToMany(models.User, {
+    //   through: models.ChallengeLike,
+    //   foreignKey: 'challengeId',
+    //   as: 'likedByUsers'
+    // });
 
-    // Challenge has many comments
-    this.hasMany(models.ChallengeComment, {
-      foreignKey: 'challengeId',
-      as: 'comments'
-    });
+    // this.hasMany(models.ChallengeComment, {
+    //   foreignKey: 'challengeId',
+    //   as: 'comments'
+    // });
   }
 
   // Instance methods
@@ -185,8 +184,7 @@ class Challenge extends Model {
     const shareWeight = 7;
     const recentBonus = this.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) ? 50 : 0;
 
-    return (this.participantCount * participantWeight) +
-           (this.viewCount * viewWeight) +
+    return (this.viewCount * viewWeight) +
            (this.likeCount * likeWeight) +
            (this.shareCount * shareWeight) +
            recentBonus;

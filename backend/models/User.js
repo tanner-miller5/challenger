@@ -1,5 +1,5 @@
 const { DataTypes, Model } = require('sequelize');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
 class User extends Model {
   static init(sequelize) {
@@ -16,21 +16,24 @@ class User extends Model {
           unique: true,
           validate: {
             len: [3, 50],
-            isAlphanumeric: true
+            notEmpty: true
           }
         },
         email: {
-          type: DataTypes.STRING,
+          type: DataTypes.STRING(100),
           allowNull: false,
           unique: true,
           validate: {
-            isEmail: true
+            isEmail: true,
+            notEmpty: true
           }
         },
-        passwordHash: {
+        password: {
           type: DataTypes.STRING,
           allowNull: false,
-          field: 'password_hash'
+          validate: {
+            len: [6, 255]
+          }
         },
         firstName: {
           type: DataTypes.STRING(50),
@@ -40,22 +43,41 @@ class User extends Model {
           type: DataTypes.STRING(50),
           field: 'last_name'
         },
+        profilePicture: {
+          type: DataTypes.STRING,
+          field: 'profile_picture'
+        },
         bio: {
           type: DataTypes.TEXT
         },
-        avatarUrl: {
-          type: DataTypes.STRING,
-          field: 'avatar_url'
+        isActive: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: true,
+          field: 'is_active'
         },
         isVerified: {
           type: DataTypes.BOOLEAN,
           defaultValue: false,
           field: 'is_verified'
         },
-        isActive: {
-          type: DataTypes.BOOLEAN,
-          defaultValue: true,
-          field: 'is_active'
+        followerCount: {
+          type: DataTypes.INTEGER,
+          defaultValue: 0,
+          field: 'follower_count'
+        },
+        followingCount: {
+          type: DataTypes.INTEGER,
+          defaultValue: 0,
+          field: 'following_count'
+        },
+        totalEarnings: {
+          type: DataTypes.DECIMAL(10, 2),
+          defaultValue: 0.00,
+          field: 'total_earnings'
+        },
+        lastLoginAt: {
+          type: DataTypes.DATE,
+          field: 'last_login_at'
         }
       },
       {
@@ -67,18 +89,23 @@ class User extends Model {
         updatedAt: 'updated_at',
         hooks: {
           beforeCreate: async (user) => {
-            if (user.passwordHash) {
-              const salt = await bcrypt.genSalt(12);
-              user.passwordHash = await bcrypt.hash(user.passwordHash, salt);
+            if (user.password) {
+              user.password = await bcrypt.hash(user.password, 12);
             }
           },
           beforeUpdate: async (user) => {
-            if (user.changed('passwordHash')) {
-              const salt = await bcrypt.genSalt(12);
-              user.passwordHash = await bcrypt.hash(user.passwordHash, salt);
+            if (user.changed('password')) {
+              user.password = await bcrypt.hash(user.password, 12);
             }
           }
-        }
+        },
+        indexes: [
+          { fields: ['username'], unique: true },
+          { fields: ['email'], unique: true },
+          { fields: ['is_active'] },
+          { fields: ['is_verified'] },
+          { fields: ['created_at'] }
+        ]
       }
     );
   }
@@ -87,7 +114,7 @@ class User extends Model {
     // User has many challenges
     this.hasMany(models.Challenge, {
       foreignKey: 'creatorId',
-      as: 'createdChallenges'
+      as: 'challenges'
     });
 
     // User has many challenge participations
@@ -102,55 +129,52 @@ class User extends Model {
       as: 'challengeViews'
     });
 
-    // User has many revenue distributions
-    this.hasMany(models.RevenueDistribution, {
-      foreignKey: 'userId',
-      as: 'earnings'
-    });
-
-    // User follows - following
+    // User follows and followers
     this.belongsToMany(models.User, {
       through: models.UserFollow,
-      foreignKey: 'followerId',
-      otherKey: 'followingId',
-      as: 'following'
-    });
-
-    // User follows - followers
-    this.belongsToMany(models.User, {
-      through: models.UserFollow,
+      as: 'followers',
       foreignKey: 'followingId',
-      otherKey: 'followerId',
-      as: 'followers'
+      otherKey: 'followerId'
     });
 
-    // User likes challenges
-    this.belongsToMany(models.Challenge, {
-      through: models.ChallengeLike,
-      foreignKey: 'userId',
-      as: 'likedChallenges'
-    });
-
-    // User has many notifications
-    this.hasMany(models.UserNotification, {
-      foreignKey: 'userId',
-      as: 'notifications'
+    this.belongsToMany(models.User, {
+      through: models.UserFollow,
+      as: 'following',
+      foreignKey: 'followerId',
+      otherKey: 'followingId'
     });
   }
 
   // Instance methods
-  async validatePassword(password) {
-    return bcrypt.compare(password, this.passwordHash);
+  async comparePassword(password) {
+    return bcrypt.compare(password, this.password);
   }
 
   toJSON() {
-    const values = { ...this.get() };
-    delete values.passwordHash;
+    const values = Object.assign({}, this.get());
+    delete values.password;
     return values;
   }
 
-  getFullName() {
-    return `${this.firstName || ''} ${this.lastName || ''}`.trim() || this.username;
+  async incrementFollowerCount() {
+    return this.increment('followerCount');
+  }
+
+  async decrementFollowerCount() {
+    return this.decrement('followerCount');
+  }
+
+  async incrementFollowingCount() {
+    return this.increment('followingCount');
+  }
+
+  async decrementFollowingCount() {
+    return this.decrement('followingCount');
+  }
+
+  async updateLastLogin() {
+    this.lastLoginAt = new Date();
+    return this.save();
   }
 }
 

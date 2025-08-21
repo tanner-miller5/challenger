@@ -12,12 +12,20 @@ class UserFollow extends Model {
         followerId: {
           type: DataTypes.INTEGER,
           allowNull: false,
-          field: 'follower_id'
+          field: 'follower_id',
+          references: {
+            model: 'users',
+            key: 'id'
+          }
         },
         followingId: {
           type: DataTypes.INTEGER,
           allowNull: false,
-          field: 'following_id'
+          field: 'following_id',
+          references: {
+            model: 'users',
+            key: 'id'
+          }
         }
       },
       {
@@ -26,19 +34,15 @@ class UserFollow extends Model {
         tableName: 'user_follows',
         timestamps: true,
         createdAt: 'created_at',
-        updatedAt: false,
+        updatedAt: 'updated_at',
         indexes: [
-          { unique: true, fields: ['follower_id', 'following_id'] },
           { fields: ['follower_id'] },
-          { fields: ['following_id'] }
-        ],
-        validate: {
-          cannotFollowSelf() {
-            if (this.followerId === this.followingId) {
-              throw new Error('Users cannot follow themselves');
-            }
+          { fields: ['following_id'] },
+          { 
+            fields: ['follower_id', 'following_id'],
+            unique: true
           }
-        }
+        ]
       }
     );
   }

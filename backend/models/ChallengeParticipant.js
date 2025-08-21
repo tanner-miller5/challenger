@@ -1,4 +1,3 @@
-
 const { DataTypes, Model } = require('sequelize');
 
 class ChallengeParticipant extends Model {
@@ -28,37 +27,20 @@ class ChallengeParticipant extends Model {
             key: 'id'
           }
         },
-        submissionVideoUrl: {
+        videoUrl: {
           type: DataTypes.STRING,
-          field: 'submission_video_url'
-        },
-        submissionDescription: {
-          type: DataTypes.TEXT,
-          field: 'submission_description'
+          field: 'video_url'
         },
         status: {
           type: DataTypes.STRING(20),
           defaultValue: 'pending',
           validate: {
-            isIn: [['pending', 'approved', 'rejected', 'completed']]
+            isIn: [['pending', 'approved', 'rejected', 'winner']]
           }
         },
         score: {
           type: DataTypes.INTEGER,
-          validate: {
-            min: 1,
-            max: 100
-          }
-        },
-        isWinner: {
-          type: DataTypes.BOOLEAN,
-          defaultValue: false,
-          field: 'is_winner'
-        },
-        joinedAt: {
-          type: DataTypes.DATE,
-          defaultValue: DataTypes.NOW,
-          field: 'joined_at'
+          defaultValue: 0
         },
         submittedAt: {
           type: DataTypes.DATE,
@@ -69,55 +51,28 @@ class ChallengeParticipant extends Model {
         sequelize,
         modelName: 'ChallengeParticipant',
         tableName: 'challenge_participants',
-        timestamps: false,
+        timestamps: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at',
         indexes: [
-          { 
-            unique: true, 
-            fields: ['challenge_id', 'user_id'] 
-          },
           { fields: ['challenge_id'] },
           { fields: ['user_id'] },
           { fields: ['status'] },
-          { fields: ['joined_at'] }
+          { fields: ['submitted_at'] }
         ]
       }
     );
   }
 
   static associate(models) {
-    // Participant belongs to challenge
     this.belongsTo(models.Challenge, {
       foreignKey: 'challengeId',
       as: 'challenge'
     });
 
-    // Participant belongs to user
     this.belongsTo(models.User, {
       foreignKey: 'userId',
       as: 'user'
-    });
-  }
-
-  // Instance methods
-  async submitChallenge(videoUrl, description) {
-    return this.update({
-      submissionVideoUrl: videoUrl,
-      submissionDescription: description,
-      status: 'completed',
-      submittedAt: new Date()
-    });
-  }
-
-  async approve(score = null) {
-    return this.update({
-      status: 'approved',
-      score: score
-    });
-  }
-
-  async reject() {
-    return this.update({
-      status: 'rejected'
     });
   }
 }

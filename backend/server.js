@@ -4,12 +4,12 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
-// Import database
+// Import database and models
 const { sequelize, testConnection } = require('./config/database');
-
+const models = require('./models'); // This will initialize all models
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(helmet());
@@ -43,7 +43,7 @@ const startServer = async () => {
 
         // Sync database (only in development)
         if (process.env.NODE_ENV === 'development') {
-            await sequelize.sync({ sync: true });
+            await sequelize.sync({ force: false }); // Changed to false to preserve data
             console.log('📦 Database synchronized');
         }
 
@@ -61,6 +61,5 @@ const startServer = async () => {
 };
 
 startServer();
-
 
 module.exports = app;

@@ -12,36 +12,32 @@ class ChallengeView extends Model {
         challengeId: {
           type: DataTypes.INTEGER,
           allowNull: false,
-          field: 'challenge_id'
+          field: 'challenge_id',
+          references: {
+            model: 'challenges',
+            key: 'id'
+          }
         },
         userId: {
           type: DataTypes.INTEGER,
-          allowNull: false,
-          field: 'user_id'
-        },
-        amount: {
-          type: DataTypes.DECIMAL(10, 2),
-          defaultValue: 0.00
-        },
-        paymentStatus: {
-          type: DataTypes.STRING(20),
-          defaultValue: 'pending',
-          field: 'payment_status',
-          validate: {
-            isIn: [['pending', 'completed', 'failed', 'refunded']]
+          field: 'user_id',
+          references: {
+            model: 'users',
+            key: 'id'
           }
         },
-        paymentMethod: {
-          type: DataTypes.STRING(50),
-          field: 'payment_method'
+        ipAddress: {
+          type: DataTypes.STRING(45),
+          field: 'ip_address'
         },
-        transactionId: {
-          type: DataTypes.STRING,
-          field: 'transaction_id'
+        userAgent: {
+          type: DataTypes.TEXT,
+          field: 'user_agent'
         },
-        expiresAt: {
-          type: DataTypes.DATE,
-          field: 'expires_at'
+        watchDuration: {
+          type: DataTypes.INTEGER,
+          field: 'watch_duration',
+          defaultValue: 0
         }
       },
       {
@@ -50,10 +46,11 @@ class ChallengeView extends Model {
         tableName: 'challenge_views',
         timestamps: true,
         createdAt: 'created_at',
-        updatedAt: false,
+        updatedAt: 'updated_at',
         indexes: [
-          { unique: true, fields: ['challenge_id', 'user_id'] },
-          { fields: ['payment_status'] }
+          { fields: ['challenge_id'] },
+          { fields: ['user_id'] },
+          { fields: ['created_at'] }
         ]
       }
     );
